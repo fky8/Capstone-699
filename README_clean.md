@@ -8,7 +8,7 @@
 
 This pipeline detects volatility regimes for the MAGS ETF (Magnificent Seven equal-weight) using:
 - 1-minute OHLCV data (yfinance)
-- Real-time news collection (Finnhub API, continuous updates)
+- News collection (Finnhub API)
 - FinBERT sentiment analysis
 - GARCH(1,1) conditional volatility forecasting  
 - 3-of-5 Forward Voting regime labeling
@@ -45,9 +45,6 @@ regime-rotation-mvp/
 │       ├── labels.csv             # Regime labels
 │       └── features_combined.csv  # FINAL OUTPUT
 │
-├── scripts/                       # Background news collector
-│   └── continuous_collector.py    # Runs every 30 minutes
-│
 └── .env                           # API keys (FINNHUB_API_KEY)
 ```
 
@@ -57,37 +54,21 @@ regime-rotation-mvp/
 
 ### 1. Install Dependencies
 
-```bash
-cd pipeline
-pip install -r requirements_hf.txt
-```
-
 ### 2. Set API Key
 
 ```bash
 export FINNHUB_API_KEY="finnhub_api_key"
 ```
 
-Get API key at https://finnhub.io/register
+Get API key at https://finnhub.io/register if the limit is hit
 
-### 3. Run Complete Pipeline
+### 3. Run Pipeline
 
-**Using Makefile:**
+**Use Makefile:**
 ```bash
 make        # Run complete pipeline
 make clean  # Remove all CSV files
 make rebuild # Clean and rebuild everything
-```
-
-**Manual Execution:**
-```bash
-python fetch_ohlcv.py                    # Step 1: OHLCV data (8 days max)
-python news_data.py --config config_hf.yaml  # Step 2: News data
-python news_sentiment.py --config config_hf.yaml  # Step 3: Sentiment (~2 min)
-python news_features.py --config config_hf.yaml   # Step 4: News features
-python garch_features.py --config config_hf.yaml  # Step 5: GARCH (~3 min)
-python create_labels.py --config config_hf.yaml   # Step 6: Labels
-python combine_features.py               # Step 7: Combine + filter
 ```
 
 ---
@@ -104,7 +85,6 @@ python combine_features.py               # Step 7: Combine + filter
 - **Source**: Finnhub API
 - **Companies**: AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
 - **Lookback**: 7 days (API window)
-- **Collection**: Continuous updates every 30 minutes
 - **Features**: headline, summary, datetime, source
 
 ### 3. Sentiment Analysis
@@ -121,7 +101,7 @@ python combine_features.py               # Step 7: Combine + filter
 - `sent_sum_pos_5m`, `sent_sum_pos_15m`, `sent_sum_pos_60m` - Positive sentiment sum
 - `sent_sum_neg_5m`, `sent_sum_neg_15m`, `sent_sum_neg_60m` - Negative sentiment sum
 - `sent_net_5m`, `sent_net_15m`, `sent_net_60m` - Net sentiment (pos - neg)
-- `sent_ewm_60m` - Exponentially weighted moving average sentiment
+- `sent_ewm_60m` - Exponentially weighted moving average sentiment (60-minute half-life: news at time t receives 100% weight, t-60min receives 50%,  t-120min receives 25% — creating exponential decay that emphasizes recent sentiment while maintaining historical context)
 
 ### GARCH Features (3)
 - `pred_vol` - GARCH(1,1) **5-bar ahead** forecast (predictive)

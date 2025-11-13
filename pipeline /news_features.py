@@ -20,7 +20,7 @@ def load_config(config_path: str = "config_hf.yaml") -> dict:
 def align_news_to_minutes(
     news_df: pd.DataFrame,
     price_df: pd.DataFrame,
-    target_tz: str = 'Asia/Tokyo'
+    target_tz: str = 'America/New_York'
 ) -> pd.DataFrame:
     """
     Align news timestamps to minute bars.
@@ -284,15 +284,17 @@ def main():
     
     data_dir = config['output']['data_dir']
     
-    # Load price data
-    from hf_data import load_hf_data
+    # Load price data directly
     ticker = config['data']['ticker']
     interval = config['data']['interval']
-    price_df = load_hf_data(f"{data_dir}/raw_{ticker.lower()}_{interval}.csv")
+    price_path = f"{data_dir}/raw_{ticker.lower()}_{interval}.csv"
+    price_df = pd.read_csv(price_path, index_col=0, parse_dates=True)
     
-    # Load news sentiment data
-    from news_sentiment import load_sentiment_data
-    news_df = load_sentiment_data(f"{data_dir}/news_sentiment.csv")
+    # Load news sentiment data directly
+    news_path = f"{data_dir}/news_sentiment.csv"
+    news_df = pd.read_csv(news_path, parse_dates=['datetime'])
+    if news_df['datetime'].dt.tz is None:
+        news_df['datetime'] = news_df['datetime'].dt.tz_localize('UTC')
     
     # Compute features
     news_features = compute_all_news_features(news_df, price_df, config)
