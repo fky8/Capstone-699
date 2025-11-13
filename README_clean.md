@@ -211,15 +211,3 @@ make help   # Show help
 **yfinance OHLCV**: Maximum 8 days of 1-minute data
    - Re-run `fetch_ohlcv.py` regularly to aggreagte data if target >8 days dataset
    - Current data expires when it falls outside 8-day window
-
-
----
-
-## Future Enhancements
-
-1. **Technical features**: Add back if needed (returns, momentum, volatility ratios)
-2. **Model training**: XGBoost classifier for regime prediction
-3. **Real-time inference**: WebSocket streaming with live predictions
-4. **Multi-horizon**: Forecast regimes at 5min, 15min, 1hr horizons
-5. **Additional data**: Options flow, social media sentiment, macro indicators
-6. **Backtesting**: Simulate trading strategies based on regime predictions
