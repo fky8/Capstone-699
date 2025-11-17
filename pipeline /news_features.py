@@ -284,10 +284,10 @@ def main():
     
     data_dir = config['output']['data_dir']
     
-    # Load price data directly
+    # Load price data directly from master file
     ticker = config['data']['ticker']
     interval = config['data']['interval']
-    price_path = f"{data_dir}/raw_{ticker.lower()}_{interval}.csv"
+    price_path = f"{data_dir}/master_raw_{ticker.lower()}_{interval}.csv"
     price_df = pd.read_csv(price_path, index_col=0, parse_dates=True)
     
     # Load news sentiment data directly

@@ -249,8 +249,8 @@ def main():
     min_hold = voting_config.get('min_hold', 5)
     votes_needed = voting_config.get('votes_needed', 3)
     
-    # Load price data
-    price_df = load_hf_data(f"{data_dir}/raw_{ticker.lower()}_{interval}.csv")
+    # Load price data from master file
+    price_df = load_hf_data(f"{data_dir}/master_raw_{ticker.lower()}_{interval}.csv")
     
     if price_df.empty:
         return

@@ -229,9 +229,9 @@ def main():
     ticker = config['data']['ticker']
     interval = config['data']['interval']
     
-    # Load price data
-    from hf_data import load_hf_data
-    price_df = load_hf_data(f"{data_dir}/raw_{ticker.lower()}_{interval}.csv")
+    # Load price data directly from master file
+    price_path = f"{data_dir}/master_raw_{ticker.lower()}_{interval}.csv"
+    price_df = pd.read_csv(price_path, index_col=0, parse_dates=True)
     
     if price_df.empty:
         return

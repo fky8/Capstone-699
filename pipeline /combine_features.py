@@ -168,9 +168,9 @@ def main():
         df_combined.index = df_combined.index.tz_convert('America/New_York').tz_localize(None)
         print(f"Converted from {original_tz} to America/New_York (timezone-naive)")
         
-        # Filter data from Nov 3, 2025 market open (9:30 AM ET) onward
-        print("\nFiltering data from Nov 3, 2025 market open...")
-        cutoff_date = pd.Timestamp('2025-11-03 09:30:00')
+        # Filter data from Nov 4, 2025 market open (9:30 AM ET) onward
+        print("\nFiltering data from Nov 4, 2025 market open...")
+        cutoff_date = pd.Timestamp('2025-11-04 09:30:00')
         rows_before = len(df_combined)
         df_combined = df_combined[df_combined.index >= cutoff_date]
         rows_after = len(df_combined)
