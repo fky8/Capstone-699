@@ -13,8 +13,8 @@ This pipeline detects volatility regimes for the MAGS ETF (Magnificent Seven equ
 - GARCH(1,1) conditional volatility forecasting  
 - 3-of-5 Forward Voting regime labeling
 
-**Current Data (as of Nov 8, 2025):**
-- 1,942 samples (Nov 3-7, 2025) - 5 trading days
+**Current Data (as of Nov 18, 2025):**
+- 3,646 samples (Nov 4-17, 2025) - 10 trading days
 - 17 features (13 news + 3 GARCH + 1 label)
 - Final dataset in Eastern Time format
 
@@ -37,7 +37,8 @@ regime-rotation-mvp/
 │   ├── Makefile                   # Simple build automation
 │   ├── run_pipeline.sh            # Complete pipeline script
 │   └── data_files/                # All generated CSV files
-│       ├── raw_mags_1m.csv        # OHLCV data
+│       ├── master_raw_mags_1m.csv # Aggregated OHLCV data (all history)
+│       ├── raw_mags_1m_YYYYMMDD_to_YYYYMMDD.csv # Dated fetch archives
 │       ├── news_raw.csv           # Raw news articles
 │       ├── news_sentiment.csv     # Sentiment scores
 │       ├── features_news.csv      # News features
@@ -78,7 +79,9 @@ make rebuild # Clean and rebuild everything
 ### 1. Price Data
 - **Asset**: MAGS ETF (Magnificent Seven equal-weight)
 - **Frequency**: 1-minute bars
-- **Period**: Past 8 days (yfinance limitation: only retrieve the past 8 days)
+- **Period**: Past 8 days per fetch (yfinance limitation)
+- **Aggregation**: Automatically appended to `master_raw_mags_1m.csv` with duplicate removal
+- **Archive**: Each fetch saved as `raw_mags_1m_YYYYMMDD_to_YYYYMMDD.csv` with date span
 - **Features**: open, high, low, close, volume
 
 ### 2. News Data
@@ -131,7 +134,7 @@ make rebuild # Clean and rebuild everything
 8. **Latency**: 9 bars (decision for bar t available at t+9)
 
 ### Results
-- **Distribution**: 54.5% Low, 29.8% Neutral, 15.3% High, 0.4% Unknown
+- **Distribution**: 52.3% Low, 31.1% Neutral, 16.3% High, 0.2% Unknown
 
 ---
 
@@ -140,8 +143,8 @@ make rebuild # Clean and rebuild everything
 **All features combined CSV**: `pipeline/data_files/features_combined.csv`
 
 **Specifications:**
-- **Samples**: 1,942 rows
-- **Date Range**: Nov 3, 2025 09:30 AM - Nov 7, 2025 3:59 PM (Eastern Time)
+- **Samples**: 3,646 rows
+- **Date Range**: Nov 4, 2025 09:30 AM - Nov 17, 2025 11:57 AM (Eastern Time)
 - **Features**: 17 columns (13 news + 3 GARCH + 1 label)
 - **Index**: DatetimeIndex in ET format
 - **Frequency**: 1-minute bars during market hours (9:30 AM - 4:00 PM ET)
@@ -149,10 +152,10 @@ make rebuild # Clean and rebuild everything
 **Sample rows:**
 ```
 Datetime,news_cnt_5m,news_cnt_15m,...,pred_vol,hist_vol,vol_ratio,regime_label
-2025-11-03 09:30:00,0.0,0.0,...,0.331,0.726,0.456,Low
-2025-11-03 09:31:00,0.0,0.0,...,3.831,0.727,5.269,Low
+2025-11-04 09:30:00,0.0,0.0,...,0.331,0.726,0.456,Low
+2025-11-04 09:31:00,0.0,0.0,...,3.831,0.727,5.269,Low
 ...
-2025-11-07 15:59:00,0.0,0.0,...,0.546,0.222,2.462,Unknown
+2025-11-17 11:57:00,0.0,0.0,...,0.546,0.222,2.462,High
 ```
 
 ---
@@ -204,10 +207,49 @@ make help   # Show help
 ```
 ---
 
+## Data Collection Flow
+
+### Automated Aggregation Pipeline
+
+**Each pipeline run:**
+
+1. **Fetch**: `fetch_ohlcv.py` downloads 8-day OHLCV data from yfinance
+2. **Archive**: Saves fetch as `raw_mags_1m_20251106_to_20251117.csv` (with actual date span)
+3. **Aggregate**: Appends new data to `master_raw_mags_1m.csv`
+4. **Deduplicate**: Removes duplicate timestamps (keeps latest)
+5. **Process**: All feature scripts (`news_features.py`, `garch_features.py`, `create_labels.py`) read from master file
+6. **Filter**: `combine_features.py` applies Nov 4, 2025 cutoff for final dataset
+
+**File Organization:**
+- `master_raw_mags_1m.csv` - Full aggregated history (Oct 29 - Nov 17: 5,201 rows)
+- `raw_mags_1m_YYYYMMDD_to_YYYYMMDD.csv` - Dated fetch archives for reference
+- `features_combined.csv` - Final filtered dataset (Nov 4 - Nov 17: 3,646 rows)
+
+**Benefits:**
+- Overcomes yfinance 8-day limitation through continuous aggregation
+- Dated archives provide audit trail of data collection
+- No manual file management needed
+- Automatic duplicate removal ensures data integrity
+
+---
+
 ## Data Limitations
 
-### Critical: API Constraints
+### API Constraints
 
-**yfinance OHLCV**: Maximum 8 days of 1-minute data
-   - Re-run `fetch_ohlcv.py` regularly to aggreagte data if target >8 days dataset
-   - Current data expires when it falls outside 8-day window
+**yfinance OHLCV**: Maximum 8 days per fetch
+   - Pipeline automatically aggregates across runs
+   - Run regularly (daily/hourly) to maintain continuous history
+   - Master file grows indefinitely with each fetch
+
+
+---
+
+## Future Enhancements
+
+1. **Technical features**: Add back if needed (returns, momentum, volatility ratios)
+2. **Model training**: XGBoost classifier for regime prediction
+3. **Real-time inference**: WebSocket streaming with live predictions
+4. **Multi-horizon**: Forecast regimes at 5min, 15min, 1hr horizons
+5. **Additional data**: Options flow, social media sentiment, macro indicators
+6. **Backtesting**: Simulate trading strategies based on regime predictions
