@@ -1,0 +1,11 @@
+Backup created: 2025-11-25 22:44:35.868945
+Tag: pre_trump_original
+
+Backed up files:
+  - master_raw_mags_1m.csv (0.69 MB)
+  - features_garch.csv (0.56 MB)
+  - features_news.csv (0.83 MB)
+  - features_combined.csv (0.97 MB)
+  - labels.csv (0.59 MB)
+  - news_raw.csv (0.46 MB)
+  - news_sentiment.csv (0.54 MB)

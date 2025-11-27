@@ -19,7 +19,7 @@ data:
   
   # News API settings
   news_api: finnhub  # Options: finnhub, marketaux
-  news_lookback_days: 7  # Match price data lookback
+  news_lookback_days: 365  # Make sure to cover enough days for HF alignment
   
   # Set to true to filter by preferred sources, false to accept all
   filter_by_source: false

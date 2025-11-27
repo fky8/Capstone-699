@@ -44,13 +44,35 @@ def align_news_to_minutes(
     news_df['datetime'] = news_df['datetime'].dt.tz_convert(target_pytz)
     
     # Round UP to next minute (ceiling) to ensure price data reflects news
-    news_df['datetime_minute'] = news_df['datetime'].dt.ceil('T')
+    news_df['datetime_minute'] = news_df['datetime'].dt.ceil('min')
     
-    # Keep all news within the price data range
-    min_dt = price_df.index.min()
-    max_dt = price_df.index.max()
-    news_df = news_df[(news_df['datetime_minute'] >= min_dt) & (news_df['datetime_minute'] <= max_dt)]
+    # Get price data range and convert to target timezone
+    min_dt = price_df.index.min().tz_convert(target_pytz)
+    max_dt = price_df.index.max().tz_convert(target_pytz)
     
+    # For each trading day, clip news timestamps to that day's market hours
+    # News before market open gets attributed to first bar (market open)
+    # News after market close gets attributed to last bar (market close)
+    news_df['date'] = news_df['datetime_minute'].dt.date
+    
+    def clip_to_market_hours(group):
+        date = group.name
+        # Get that day's price range
+        day_price = price_df[price_df.index.tz_convert(target_pytz).date == date]
+        if len(day_price) > 0:
+            day_min = day_price.index.min().tz_convert(target_pytz)
+            day_max = day_price.index.max().tz_convert(target_pytz)
+            group['datetime_minute'] = group['datetime_minute'].clip(lower=day_min, upper=day_max)
+        return group
+    
+    news_df = news_df.groupby('date', group_keys=False).apply(clip_to_market_hours)
+    news_df = news_df.drop(columns=['date'])
+    
+    # Filter out news from dates outside the price data date range
+    min_date = min_dt.date()
+    max_date = max_dt.date()
+    news_df = news_df[(news_df['datetime_minute'].dt.date >= min_date) & 
+                      (news_df['datetime_minute'].dt.date <= max_date)]
     
     return news_df
 

@@ -226,7 +226,7 @@ def load_news_data(input_path: str) -> pd.DataFrame:
 
 
 def main():
-    """CLI entry point for news fetching."""
+    """CLI entry point for news fetching with master file aggregation."""
     import argparse
     
     parser = argparse.ArgumentParser(description="Fetch news for Magnificent Seven stocks")
@@ -242,6 +242,18 @@ def main():
         default=None,
         help="Finnhub API key (or set FINNHUB_API_KEY env var)"
     )
+    parser.add_argument(
+        "--from-date",
+        type=str,
+        default=None,
+        help="Start date (YYYY-MM-DD). If not provided, uses lookback_days from config"
+    )
+    parser.add_argument(
+        "--to-date",
+        type=str,
+        default=None,
+        help="End date (YYYY-MM-DD). If not provided, uses today"
+    )
     
     args = parser.parse_args()
     
@@ -250,29 +262,113 @@ def main():
     
     tickers = config['data']['magnificent_seven']
     lookback_days = config['data']['news_lookback_days']
+    output_dir = config['output']['data_dir']
     
-    # Fetch news
-    df = fetch_news_for_tickers(
-        tickers=tickers,
-        lookback_days=lookback_days,
-        api_key=args.api_key,
-        rate_limit_delay=1.0
-    )
+    # Handle date range
+    if args.from_date and args.to_date:
+        print(f"Fetching news for {len(tickers)} tickers...")
+        print(f"Date range: {args.from_date} to {args.to_date}")
+        
+        # Parse dates
+        from_date_dt = datetime.strptime(args.from_date, '%Y-%m-%d')
+        to_date_dt = datetime.strptime(args.to_date, '%Y-%m-%d')
+        
+        # Calculate lookback for the function
+        lookback = (to_date_dt - from_date_dt).days
+        
+        # Temporarily override datetime.now() behavior by passing explicit dates
+        all_articles = []
+        import os
+        api_key = args.api_key or os.environ.get('FINNHUB_API_KEY')
+        
+        if not api_key:
+            print("Finnhub API key not provided. Set FINNHUB_API_KEY env var or pass api_key argument.")
+            return
+        
+        for ticker in tickers:
+            articles = fetch_finnhub_news(ticker, args.from_date, args.to_date, api_key)
+            
+            for article in articles:
+                all_articles.append({
+                    'ticker': ticker,
+                    'datetime': pd.to_datetime(article.get('datetime', 0), unit='s', utc=True),
+                    'title': article.get('headline', ''),
+                    'summary': article.get('summary', ''),
+                    'url': article.get('url', ''),
+                    'source': article.get('source', ''),
+                    'category': article.get('category', '')
+                })
+            
+            time.sleep(1.0)
+        
+        if not all_articles:
+            print("No articles fetched for specified date range")
+            return
+        
+        df_new = pd.DataFrame(all_articles)
+    else:
+        print(f"Fetching news for {len(tickers)} tickers...")
+        print(f"Lookback: {lookback_days} days")
+        
+        # Fetch news
+        df_new = fetch_news_for_tickers(
+            tickers=tickers,
+            lookback_days=lookback_days,
+            api_key=args.api_key,
+            rate_limit_delay=1.0
+        )
     
-    if df.empty:
+    if df_new.empty:
+        print("No new articles fetched")
         return
     
-    # Deduplicate
-    df = deduplicate_news(df)
+    # Deduplicate within new fetch
+    initial_count = len(df_new)
+    df_new = deduplicate_news(df_new)
+    print(f"Fetched {len(df_new)} unique articles (removed {initial_count - len(df_new)} duplicates)")
     
-    # Note: Keyword filtering removed - using all news articles
+    from_date = df_new['datetime'].min().strftime('%Y%m%d')
+    to_date = df_new['datetime'].max().strftime('%Y%m%d')
+    print(f"Date range: {df_new['datetime'].min()} to {df_new['datetime'].max()}")
     
-    # Save data
-    output_dir = config['output']['data_dir']
-    output_path = f"{output_dir}/news_raw.csv"
-    save_news_data(df, output_path)
+    # Save dated archive of this fetch
+    dated_path = f"{output_dir}/raw_news_{from_date}_to_{to_date}.csv"
+    save_news_data(df_new, dated_path)
+    print(f"\nSaved latest fetch to {dated_path}")
     
-    # Display summary
+    # Load existing master file if it exists
+    master_path = f"{output_dir}/master_news_raw.csv"
+    if Path(master_path).exists():
+        print(f"\nLoading existing master file...")
+        df_master = load_news_data(master_path)
+        print(f"Existing data: {len(df_master)} articles ({df_master['datetime'].min()} to {df_master['datetime'].max()})")
+        
+        # Combine with new data
+        df_combined = pd.concat([df_master, df_new], ignore_index=True)
+        
+        # Remove duplicates (same ticker + datetime + title)
+        before = len(df_combined)
+        df_combined = df_combined.drop_duplicates(
+            subset=['ticker', 'datetime', 'title'],
+            keep='first'
+        )
+        after = len(df_combined)
+        
+        added = after - len(df_master)
+        print(f"Added {added} new articles")
+        print(f"Master data now: {len(df_combined)} articles ({df_combined['datetime'].min()} to {df_combined['datetime'].max()})")
+        
+    else:
+        print(f"\nCreating new master file...")
+        df_combined = df_new.copy()
+        print(f"Master data: {len(df_combined)} articles")
+    
+    # Sort by datetime
+    df_combined = df_combined.sort_values('datetime').reset_index(drop=True)
+    
+    # Save master
+    save_news_data(df_combined, master_path)
+    print(f"Saved to {master_path}")
 
 
 if __name__ == "__main__":

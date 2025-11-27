@@ -8,9 +8,12 @@ all:
 	python news_sentiment.py --config config_hf.yaml
 	python news_features.py --config config_hf.yaml
 	python garch_features.py --config config_hf.yaml
+	python trump_data.py
+	python trump_sentiment.py
+	python trump_features.py
 	python create_labels.py --config config_hf.yaml
 	python combine_features.py
-	@echo "Pipeline complete!"
+	@echo "Pipeline complete"
 
 clean:
 	rm -f data_files/*.csv
