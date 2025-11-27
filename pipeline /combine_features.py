@@ -7,6 +7,7 @@ Combines all feature files into a single features_combined.csv
 Input files (from pipeline/data_files/):
 - features_news.csv (news features)
 - features_garch.csv (GARCH volatility)
+- features_trump.csv (Trump social media sentiment)
 - labels.csv (regime labels)
 
 Output:
@@ -42,6 +43,13 @@ def load_features(data_dir: Path):
     df_garch = pd.read_csv(garch_file, index_col=0, parse_dates=True)
     print(f"GARCH features: {df_garch.shape[1]} features, {len(df_garch)} samples")
     
+    # Load Trump features
+    trump_file = data_dir / "features_trump.csv"
+    if not trump_file.exists():
+        raise FileNotFoundError(f"Trump features not found: {trump_file}")
+    df_trump = pd.read_csv(trump_file, index_col=0, parse_dates=True)
+    print(f"Trump features: {df_trump.shape[1]} features, {len(df_trump)} samples")
+    
     # Load labels
     labels_file = data_dir / "labels.csv"
     if not labels_file.exists():
@@ -49,10 +57,10 @@ def load_features(data_dir: Path):
     df_labels = pd.read_csv(labels_file, index_col=0, parse_dates=True)
     print(f"Labels: {df_labels.shape[1]} columns, {len(df_labels)} samples")
     
-    return df_news, df_garch, df_labels
+    return df_news, df_garch, df_trump, df_labels
 
 
-def combine_features(df_news, df_garch, df_labels):
+def combine_features(df_news, df_garch, df_trump, df_labels):
     """Combine all features on timestamp index"""
     print("\nCombining features...")
     
@@ -63,6 +71,10 @@ def combine_features(df_news, df_garch, df_labels):
     # Join GARCH features
     df = df.join(df_garch, how='left')
     print(f"After adding GARCH features: {df.shape}")
+    
+    # Join Trump features
+    df = df.join(df_trump, how='left')
+    print(f"After adding Trump features: {df.shape}")
     
     # Join labels (select only regime_label column)
     df = df.join(df_labels[['regime_label']], how='left')
@@ -116,11 +128,13 @@ def validate_features(df):
     # Feature breakdown
     news_cols = [c for c in df.columns if c.startswith(('news_', 'avg_', 'sentiment_', 'ewma_', 'topic_', 'session_'))]
     garch_cols = [c for c in df.columns if c in ['pred_vol', 'hist_vol', 'vol_ratio']]
+    trump_cols = [c for c in df.columns if c.startswith('trump_')]
     label_cols = [c for c in df.columns if c == 'regime_label']
     
     print(f"\nFeature breakdown:")
     print(f"  News: {len(news_cols)} features")
     print(f"  GARCH: {len(garch_cols)} features")
+    print(f"  Trump: {len(trump_cols)} features")
     print(f"  Labels: {len(label_cols)} column")
     
     # Label distribution
@@ -157,10 +171,10 @@ def main():
     
     try:
         # Load all features
-        df_news, df_garch, df_labels = load_features(data_dir)
+        df_news, df_garch, df_trump, df_labels = load_features(data_dir)
         
         # Combine features
-        df_combined = combine_features(df_news, df_garch, df_labels)
+        df_combined = combine_features(df_news, df_garch, df_trump, df_labels)
         
         # Convert index to Eastern Time and remove timezone info
         print("\nConverting timezone to Eastern Time...")
@@ -193,7 +207,7 @@ def main():
         print(f"\nFinal output: {output_file}")
         print(f"Total features: {df_combined.shape[1]}")
         print(f"Total samples: {len(df_combined)}")
-        print("\nReady for modeling! ")
+
         
     except Exception as e:
         print(f"\nERROR: {str(e)}")

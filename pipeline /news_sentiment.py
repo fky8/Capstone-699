@@ -201,7 +201,7 @@ def main():
     
     # Get input/output paths
     data_dir = config['output']['data_dir']
-    input_path = args.input or f"{data_dir}/news_raw.csv"
+    input_path = args.input or f"{data_dir}/master_news_raw.csv"
     output_path = args.output or f"{data_dir}/news_sentiment.csv"
     
     # Load news data
