@@ -173,11 +173,17 @@ def main():
     import argparse
     from glob import glob
     import os
+    import re
     
-    # Find latest trump_raw file by modification time (not alphabetically)
+    # Find latest trump_raw file by end date in filename
     trump_files = glob('data_files/trump_raw_*.csv')
     if trump_files:
-        default_input = max(trump_files, key=lambda x: (os.path.getsize(x), os.path.getmtime(x)))
+        # Parse end date from filename pattern: trump_raw_YYYYMMDD_to_YYYYMMDD.csv
+        def get_end_date(filepath):
+            match = re.search(r'_to_(\d{8})\.csv$', filepath)
+            return match.group(1) if match else '00000000'
+        
+        default_input = max(trump_files, key=get_end_date)
     else:
         default_input = 'data_files/trump_raw_latest.csv'
     
