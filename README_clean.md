@@ -15,8 +15,8 @@ This pipeline detects volatility regimes for the MAGS ETF (Magnificent Seven equ
 - GARCH(1,1) conditional volatility forecasting  
 - 3-of-5 Forward Voting regime labeling
 
-**Current Data (as of Nov 25, 2025):**
-- 5,962 samples (Nov 4-25, 2025) - 16 trading days
+**Current Data (as of Dec 7, 2025):**
+- 8,722 samples (Nov 4 - Dec 5, 2025) - 23 trading days
 - 30 features (13 news + 3 GARCH + 13 Trump + 1 label)
 - Final dataset in Eastern Time format
 
