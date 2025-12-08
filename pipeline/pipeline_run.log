@@ -1,0 +1,14 @@
+Running complete pipeline...
+python fetch_ohlcv.py
+Starting OHLCV download...
+Downloaded 2777 rows
+Date range: 2025-11-14 09:30:00-05:00 to 2025-11-25 10:18:00-05:00
+
+Saved latest fetch to data_files/raw_mags_1m_20251114_to_20251125.csv
+
+Loading existing master file...
+Existing data: 7114 rows (2025-10-29 13:30:00+00:00 to 2025-11-24 16:21:00+00:00)
+Added 327 new rows
+Master data now: 7441 rows (2025-10-29 13:30:00+00:00 to 2025-11-25 15:18:00+00:00)
+Saved to data_files/master_raw_mags_1m.csv
+python news_data.py --config config_hf.yaml

@@ -1,0 +1,185 @@
+# High-Frequency Regime Detection Configuration for MAGS ETF
+
+# Data Configuration
+data:
+  ticker: MAGS  # Target ETF
+  magnificent_seven:  # Constituents for news collection
+    - AAPL  # Apple
+    - MSFT  # Microsoft
+    - GOOGL # Alphabet
+    - AMZN  # Amazon
+    - NVDA  # NVIDIA
+    - META  # Meta
+    - TSLA  # Tesla
+  
+  # High-frequency settings
+  interval: 1m  # 1-minute bars
+  lookback_days: 7  # Past 7 calendar days (yfinance 1m limit)
+  timezone: Asia/Tokyo  # Convert to Tokyo timezone
+  
+  # News API settings
+  news_api: finnhub  # Options: finnhub, marketaux
+  news_lookback_days: 365  # Make sure to cover enough days for HF alignment
+  
+  # Set to true to filter by preferred sources, false to accept all
+  filter_by_source: false
+  
+  # news_keywords:
+  #   - earnings
+  #   - guidance
+  #   - dividend
+  #   - upgrade
+  #   - downgrade
+  #   - AI
+  #   - antitrust
+  #   - lawsuit
+  #   - data breach
+  #   - CEO
+  #   - merger
+  #   - acquisition
+  #   - regulation
+  #   - innovation
+
+# Feature Engineering
+features:
+  technical:
+    # Returns
+    return_windows: [15, 60]  # minutes
+    
+    # Volatility
+    vol_windows: [30, 60]  # minutes for rolling std
+    annualization_factor: 252  # Trading days per year
+    
+    # Relative strength
+    sma_window: 60  # minutes
+  
+  news:
+    # News count aggregation windows
+    count_windows: [5, 15, 60]  # minutes
+    
+    # Sentiment aggregation windows
+    sentiment_windows: [5, 15, 60]  # minutes
+    
+    # EWMA sentiment
+    ewm_halflife: 60  # minutes
+    
+    # Topic tracking
+    track_keywords: true
+  
+  garch:
+    p: 1  # GARCH lag order
+    q: 1  # ARCH lag order
+    min_observations: 100  # Minimum obs before fitting
+    forecast_horizon: 5  # Steps ahead (5 minutes)
+    vol_ratio_window: 30  # Historical vol window (minutes)
+
+# Label Configuration
+labels:
+  method: vol_regime  # Volatility ratio regime (forward_vol / backward_vol)
+  forward_window: 3  # Minutes ahead for forward volatility
+  backward_window: 3  # Minutes back for historical volatility (MUST match forward_window)
+  min_dwell_time: 5  # Minimum consecutive bars to confirm regime change (filters transient spikes)
+  low_threshold: 0.95  # Low-Vol if ratio < 0.95 (future vol < 95% of past)
+  high_threshold: 1.05  # High-Vol if ratio > 1.05 (future vol > 105% of past)
+  # Forward-looking approach: predicts FUTURE regime based on current features
+  # Ratio = volatility(t to t+forward_window) / volatility(t-backward_window to t)
+  # Minimum dwell time ensures regime changes persist (not single-bar noise)
+
+# Label Configuration - Hysteresis Method (Alternative)
+labels_hysteresis:
+  # Level-based regime detection (vs ratio-based)
+  # Uses slow baseline + fast actual vol with hysteresis
+  
+  # Volatility windows
+  actual_vol_window: 30  # Minutes for fast realized vol
+  baseline_method: ewm  # 'ewm' or 'rolling'
+  baseline_window: 120  # 2 hours for slow baseline
+  baseline_halflife: 60  # 1 hour (for ewm method)
+  
+  # Hysteresis thresholds (actual_vol / baseline_vol)
+  enter_high: 1.8  # Enter High regime when ratio >= 1.8
+  exit_high: 1.3   # Exit High regime when ratio <= 1.3 (hysteresis gap)
+  enter_low: 0.7   # Enter Low regime when ratio <= 0.7
+  exit_low: 0.9    # Exit Low regime when ratio >= 0.9 (hysteresis gap)
+  
+  # Persistence requirements
+  dwell_min: 15  # Minimum bars in High/Low before considering exit
+  confirm_bars: 5  # Consecutive bars meeting exit condition
+  
+  # Optional: use GARCH predictions in regime logic
+  use_pred: true  # If true, also check pred_vol/baseline_vol
+
+# Label Configuration - 3-of-5 Forward Voting (New Method)
+labels_voting:
+  # Baseline volatility (EWMA of past realized vol)
+  baseline_halflife: 30  # 30 bars (30 minutes) for EWMA baseline
+  
+  # Forward window (ground-truth realized vol)
+  forward_window: 5  # 5 bars forward, decision available at t+9
+  
+  # Thresholds (ratio = forward_vol / baseline_vol)
+  high_threshold: 1.2  # High if ratio ≥ 1.2
+  low_threshold: 0.8   # Low if ratio ≤ 0.8
+  # Neutral: 0.8 < ratio < 1.2
+  
+  # Voting parameters
+  votes_needed: 3  # Need 3 out of 5 votes for regime decision
+  
+  # Min-hold (dwell time to prevent oscillation)
+  min_hold: 5  # Minimum bars to hold state before allowing change
+
+# Time Series Split
+split:
+  train_pct: 0.60  # 60% for training
+  val_pct: 0.20    # 20% for validation
+  test_pct: 0.20   # 20% for test
+  embargo_minutes: 30  # 30-minute gap between splits
+
+# Model Configuration
+model:
+  type: xgboost  # Options: xgboost, logistic
+  
+  xgboost:
+    n_estimators: 200
+    max_depth: 4
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    objective: multi:softprob
+    eval_metric: mlogloss
+    random_state: 42
+    early_stopping_rounds: 50
+  
+  logistic:
+    solver: lbfgs
+    max_iter: 1000
+    multi_class: multinomial
+    random_state: 42
+  
+  # Class imbalance handling
+  use_sample_weights: true
+
+# Evaluation
+evaluation:
+  metrics:
+    - accuracy
+    - precision_macro
+    - recall_macro
+    - f1_macro
+    - log_loss
+  
+  # Compare baseline vs enhanced
+  baseline_features:
+    - technical
+  
+  enhanced_features:
+    - technical
+    - news
+    - garch
+
+# Output paths
+output:
+  data_dir: data_files
+  models_dir: artifacts/hf
+  results_dir: outputs/hf
+  logs_dir: logs/hf
