@@ -15,8 +15,8 @@ This pipeline detects volatility regimes for the MAGS ETF (Magnificent Seven equ
 - GARCH(1,1) conditional volatility forecasting  
 - 3-of-5 Forward Voting regime labeling
 
-**Current Data (as of Dec 7, 2025):**
-- 8,722 samples (Nov 4 - Dec 5, 2025) - 23 trading days
+**Current Data (as of Dec 9, 2025):**
+- 10,277 samples (Oct 29 - Dec 5, 2025) - 22 trading days
 - 30 features (13 news + 3 GARCH + 13 Trump + 1 label)
 - Final dataset in Eastern Time format
 
@@ -183,10 +183,10 @@ All derived feature tables (e.g., features_news.csv, features_trump.csv, feature
 8. **Latency**: 9 bars (decision for bar t available at t+9)
 
 ### Label Distribution
-- **Low**: 54.0% (4,707 samples)
-- **Neutral**: 30.2% (2,632 samples)
-- **High**: 15.8% (1,375 samples)
-- **Unknown**: 0.1% (8 samples)
+- **Low**: 55.0% (5,656 samples)
+- **Neutral**: 29.0% (2,984 samples)
+- **High**: 15.6% (1,599 samples)
+- **Unknown**: 0.4% (38 samples)
 
 ---
 
@@ -195,9 +195,9 @@ All derived feature tables (e.g., features_news.csv, features_trump.csv, feature
 **All features combined CSV**: `pipeline/data_files/features_combined.csv`
 
 **Specifications:**
-- **Samples**: 8,722 rows
-- **Date Range**: Nov 4, 2025 09:30 AM - Dec 5, 2025 03:59 PM (Eastern Time)
-- **Trading Days**: 23 days
+- **Samples**: 10,277 rows
+- **Date Range**: Oct 29, 2025 09:30 AM - Dec 5, 2025 03:59 PM (Eastern Time)
+- **Trading Days**: 22 days
 - **Features**: 30 columns (13 news + 13 Trump + 3 GARCH + 1 label)
 - **Index**: DatetimeIndex in ET format
 - **Frequency**: 1-minute bars during market hours (9:30 AM - 4:00 PM ET)
@@ -215,7 +215,7 @@ Datetime,news_cnt_5m,news_cnt_15m,...,trump_cnt_5m,trump_cnt_15m,...,pred_vol,hi
 
 ## Configuration
 
-Edit `pipeline/config_hf.yaml`:
+Edit `pipeline/config.yaml`:
 
 ### Key Settings
 ```yaml
@@ -283,7 +283,7 @@ make help    # Show available commands
 **File Organization:**
 - `master_raw_mags_1m.csv` - Full aggregated history (Oct 29 - Dec 5: 10,277 rows)
 - `raw_mags_1m_YYYYMMDD_to_YYYYMMDD.csv` - Dated fetch archives for reference
-- `features_combined.csv` - Final filtered dataset (Nov 4 - Dec 5: 8,722 rows)
+- `features_combined.csv` - Final filtered dataset (Nov 4 - Dec 5: 8,722 rows filtered from 10,277 total)
 
 **Benefits:**
 - Overcomes yfinance 8-day limitation through continuous aggregation
@@ -438,7 +438,7 @@ This ensures proper alignment when filtering Trump posts by time windows.
 
 ### Coverage Statistics
 
-Current dataset (Nov 4 - Dec 5, 2025, 8,722 bars):
+Current dataset (Oct 29 - Dec 5, 2025, 10,277 bars):
 - **Trump posts collected**: ~700+
 - **Posts during market hours**: ~650+
 - **Bars with non-zero 60m count**: ~30%
