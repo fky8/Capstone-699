@@ -25,8 +25,12 @@ This pipeline detects volatility regimes for the MAGS ETF (Magnificent Seven equ
 ## Project Structure
 
 ```
-regime-rotation-mvp/
-├── pipeline/                       # All data pipeline scripts
+Capstone-699/
+├── README.md                      # Project documentation
+├── requirements.txt               # Python dependencies
+├── Capstone_vis.ipynb             # Visualization notebook (Altair charts)
+├── Modelling Process.ipynb        # Modeling notebook (HMM, Random Forest)
+├── pipeline/                      # All data pipeline scripts
 │   ├── fetch_ohlcv.py             # Fetch 1-min OHLCV from yfinance
 │   ├── news_data.py               # Fetch news from Finnhub API
 │   ├── news_sentiment.py          # FinBERT sentiment analysis
@@ -38,10 +42,9 @@ regime-rotation-mvp/
 │   ├── create_labels.py           # 3-of-5 voting regime labels
 │   ├── combine_features.py        # Combine all features + filter by date
 │   ├── restore_datasets.py        # Backup/restore dataset utility
-│   ├── config_hf.yaml             # Configuration file
-│   ├── requirements.txt           # Python dependencies
+│   ├── config.yaml                # Configuration file
+│   ├── requirements.txt           # Pipeline dependencies (same as root)
 │   ├── Makefile                   # Simple build automation
-│   ├── run_pipeline.sh            # Complete pipeline script
 │   └── data_files/                # All generated CSV files
 │       ├── master_raw_mags_1m.csv # Aggregated OHLCV data (all history)
 │       ├── raw_mags_1m_YYYYMMDD_to_YYYYMMDD.csv # Dated fetch archives
@@ -55,7 +58,9 @@ regime-rotation-mvp/
 │       ├── labels.csv             # Regime labels
 │       └── features_combined.csv  # FINAL OUTPUT
 │
-└── .env                           # API keys (FINNHUB_API_KEY)
+└── model/                         # Model outputs and results
+    └── data_files/
+        └── results.csv            # Model predictions
 ```
 
 ---
@@ -65,7 +70,7 @@ regime-rotation-mvp/
 ### 1. Install Dependencies
 
 ```bash
-pip install -r pipeline/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### 2. Set API Key
