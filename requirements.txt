@@ -1,0 +1,45 @@
+# High-Frequency Regime Detection Requirements
+# Python 3.12+
+
+# Core dependencies
+numpy>=1.26.0
+pandas>=2.1.0
+pyyaml>=6.0.1
+pytz>=2023.3
+python-dateutil>=2.8.2
+
+# Data fetching
+yfinance>=0.2.31
+requests>=2.31.0
+
+# Volatility modeling (GARCH)
+arch>=6.2.0
+
+# Machine learning
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+
+# Deep learning for sentiment analysis
+torch>=2.1.0
+transformers>=4.35.0
+sentencepiece>=0.1.99
+
+# News API clients (optional - pick one)
+finnhub-python>=2.4.19
+# Alternative: marketaux-python
+
+# Utilities
+joblib>=1.3.2
+tqdm>=4.66.0
+
+# Optional: for better performance
+numba>=0.58.0
+
+# Optional: visualization
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# black>=23.11.0
+# flake8>=6.1.0
