@@ -91,6 +91,9 @@ make clean    # Remove all CSV files
 make rebuild  # Clean and rebuild everything
 ```
 ---
+### 4. Run Modelling script
+```bash
+python model_pipeline.py
 
 ## Data Sources
 
@@ -425,6 +428,7 @@ make all              # Run complete pipeline
 4. trump_data → trump_sentiment → trump_features
 5. create_labels
 6. combine_features
+7. model_pipeline
 
 ### Timezone Handling
 
@@ -451,4 +455,10 @@ Current dataset (Oct 29 - Dec 5, 2025, 10,277 bars):
 - Where external examples (e.g., StackOverflow answers or blog posts) were adapted more directly, inline comments in the corresponding `.py` files acknowledge the original source
 - Parts of the pipeline design, code docstrings, type annotations, and this README were drafted with the assistance of ChatGPT (OpenAI) and then reviewed and modified by the team
 
+### Modelling information
+- No arguments required. Model runs with entire available output from previous pipeline
+- All custom functions imported from model/model_module.py
+- Python notebook version of script available with all functions created in notebook as alternative (Modelling Process.ipynb)
+- Printed output of ROC AUC scores directly to the terminal
+- ROC curve images outputed to model/model_graphs
 ---
